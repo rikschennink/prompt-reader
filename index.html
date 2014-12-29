@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimal-ui">
+
+    <title>Reddit WritingPrompts Reader</title>
+
+    <meta name="author" content="Rik Schennink">
+    <meta name="description" content="Reddit WritingPrompts Reader">
+
     <link href='http://fonts.googleapis.com/css?family=Convergence' rel='stylesheet' type='text/css'>
     <style>
 
@@ -8,16 +17,12 @@
             height:100%;
         }
 
-        body,button {
+        body {
             line-height:1.5;
             font-size:1.25rem;
             font-family:Palatino, 'Noto Serif', 'Times', serif;
             color: #222120;
-        }
-
-        body {
             position:relative;
-            padding:5rem 1.5rem;
             margin:0 auto;
             overflow:hidden;
             box-sizing:border-box;
@@ -121,10 +126,6 @@
             margin-bottom:6rem;
         }
 
-        article .author {
-
-        }
-
         .panel {
             position:fixed;
             padding:6rem 3rem;
@@ -137,11 +138,14 @@
             margin:0;
             opacity:0;
             transform:perspective(100px) translateY(-100px) translateZ(-100px);
+            -webkit-transform:perspective(100px) translateY(-100px) translateZ(-100px);
             transition:all .5s;
+            -webkit-overflow-scrolling:touch;
         }
 
         .panel.active {
             transform:translateZ(0);
+            -webkit-transform:translateZ(0);
             opacity:1;
             z-index:2;
         }
@@ -155,6 +159,7 @@
             background:rgba(0,0,0,.1);
             z-index:10;
             transform:translateX(-100%);
+            -webkit-transform:translateX(-100%);
         }
 
         .loader.load {
@@ -196,6 +201,22 @@
 
         }
 
+        @media (max-width:30em) {
+
+            h1 {
+                font-size:1.25rem;
+            }
+
+            body {
+                font-size:1rem;
+            }
+
+            .panel {
+                padding:3rem 1.5rem;
+            }
+
+        }
+
     </style>
 
 </head>
@@ -203,7 +224,7 @@
 
 <span class="loader"></span>
 
-<h1>Prompt Reader</h1>
+<h1>Reddit WritingPrompts Reader</h1>
 
 <div class="panel active">
     <nav class="active">
@@ -348,7 +369,6 @@
                         var type = item.data.link_flair_text;
                         var author = item.data.author.toLocaleLowerCase();
                         var id = item.data.id;
-                        var url = item.data.url;
                         var title = capitaliseFirstLetter(stripPrompt(item.data.title));
 
                     return '<li><a href="index.html?id=' + id + '">' + title + '</a>' +

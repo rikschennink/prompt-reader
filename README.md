@@ -1,0 +1,1 @@
+A simple website to read [Reddit Writing Prompts](http://reddit.com/r/WritingPrompts).
