@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimal-ui">
+
+    <title>Reddit WritingPrompts Reader</title>
+
+    <meta name="author" content="Rik Schennink">
+    <meta name="description" content="Reddit WritingPrompts Reader">
+
     <link href='http://fonts.googleapis.com/css?family=Convergence' rel='stylesheet' type='text/css'>
     <style>
 
@@ -203,7 +212,7 @@
 
 <span class="loader"></span>
 
-<h1>Prompt Reader</h1>
+<h1>Reddit WritingPrompts Reader</h1>
 
 <div class="panel active">
     <nav class="active">
@@ -348,7 +357,6 @@
                         var type = item.data.link_flair_text;
                         var author = item.data.author.toLocaleLowerCase();
                         var id = item.data.id;
-                        var url = item.data.url;
                         var title = capitaliseFirstLetter(stripPrompt(item.data.title));
 
                     return '<li><a href="index.html?id=' + id + '">' + title + '</a>' +
