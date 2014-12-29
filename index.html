@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href='http://fonts.googleapis.com/css?family=Convergence' rel='stylesheet' type='text/css'>
+    <style>
+
+        html,body {
+            height:100%;
+        }
+
+        body,button {
+            line-height:1.5;
+            font-size:1.25rem;
+            font-family:Palatino, 'Noto Serif', 'Times', serif;
+            color: #222120;
+        }
+
+        body {
+            position:relative;
+            padding:5rem 1.5rem;
+            margin:0 auto;
+            overflow:hidden;
+            box-sizing:border-box;
+            vertical-align: baseline;
+        }
+
+        a {
+            display: block;
+            color: #4583ff;
+        }
+
+        a:visited {
+            color: #9965A5;
+        }
+
+        h1 {
+            margin:0 0 3rem 0;
+            text-align:center;
+            font-size:2rem;
+            font-weight: normal;
+        }
+
+        h1,li a,.author {
+            font-family: 'Convergence', sans-serif;
+        }
+
+        *+* {
+            margin:1.5rem 0 0 0;
+        }
+
+        ol {
+            position:relative;
+            list-style-type:none;
+            padding:0;
+            z-index:1;
+        }
+
+        li {
+            position: relative;
+            margin-bottom:.5rem;
+        }
+
+        li a {
+            text-decoration: none;
+        }
+
+        li .author {
+            margin-top: .25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .author,
+        .author a {
+            display: block;
+            color: #D5D0CF;
+            text-transform:lowercase;
+            font-size: .875rem;
+            text-align: left;
+        }
+
+        .author a {
+            display:inline;
+        }
+
+        .author a:hover {
+            text-decoration:underline;
+        }
+
+        nav {
+            opacity:0;
+            transition:all .5s;
+            transform:perspective(100px) translateY(-50px) translateZ(-50px);
+        }
+
+        nav.active {
+            opacity:1;
+            transform:translateZ(0);
+        }
+
+        button {
+            background:transparent;
+            border:none;
+            display: block;
+            margin:0 auto;
+            text-align: center;
+            padding: 1.5rem;
+            cursor:pointer;
+        }
+
+        div {
+            color:#675D57;
+        }
+
+        .panel>* {
+            margin-left:auto;
+            margin-right:auto;
+            max-width:32rem;
+        }
+
+        article {
+            margin-bottom:6rem;
+        }
+
+        article .author {
+
+        }
+
+        .panel {
+            position:fixed;
+            padding:6rem 3rem;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            overflow-y:scroll;
+            background:#fff;
+            margin:0;
+            opacity:0;
+            transform:perspective(100px) translateY(-100px) translateZ(-100px);
+            transition:all .5s;
+        }
+
+        .panel.active {
+            transform:translateZ(0);
+            opacity:1;
+            z-index:2;
+        }
+
+        .loader {
+            position:fixed;
+            top:0;
+            right:0;
+            left:0;
+            height:.25rem;
+            background:rgba(0,0,0,.1);
+            z-index:10;
+            transform:translateX(-100%);
+        }
+
+        .loader.load {
+            animation-name:load;
+            animation-duration:500ms;
+            -webkit-animation-name:load;
+            -webkit-animation-duration:500ms;
+        }
+
+        @-webkit-keyframes load {
+
+            0% {
+                transform:translateX(-100%);
+            }
+
+            20% {
+                transform:translateX(-90%);
+            }
+
+            30% {
+                transform:translateX(-90%);
+            }
+
+            50% {
+                transform:translateX(-40%);
+            }
+
+            70% {
+                transform:translateX(-20%);
+            }
+
+            80% {
+                transform:translateX(-20%);
+            }
+
+            100% {
+                transform:translateX(0);
+            }
+
+        }
+
+    </style>
+
+</head>
+<body>
+
+<span class="loader"></span>
+
+<h1>Prompt Reader</h1>
+
+<div class="panel active">
+    <nav class="active">
+        <h1>Prompts</h1>
+        <ol class="stories"></ol>
+    </nav>
+</div>
+
+</body>
+
+
+<script>
+
+    // setup reader
+    var Reader = (function(){
+
+        var limit = 20;
+        var api = 'http://api.reddit.com';
+        var sub = 'WritingPrompts';
+        var storiesURL = api + '/r/' + sub + '/hot/?limit=' + limit;
+        var postURL = api + '/r/' + sub + '/comments/';
+
+        // nodes
+        var nav = document.querySelector('nav');
+        var list = document.querySelector('.stories');
+
+        var active = null;
+        var panel = null;
+        var data = null;
+
+        // listen to clicks on story list
+        list.addEventListener('click',function(e){
+
+            if (e.target.nodeName !== 'A') {return;}
+            e.preventDefault();
+            e.stopPropagation();
+
+            // get id from url
+            var storyId = e.target.href.split('?id=')[1];
+
+            // get story object
+            active = getStoryById(storyId);
+            if (!active){return;}
+
+            // create history
+            var current_url = window.location.href;
+            history.replaceState({},'', e.target.href);
+            history.replaceState({},'',current_url);
+
+            // get data
+            request(postURL + storyId  + '/?limit=1&sort=hot',onReceiveComments);
+        });
+
+        // story detail methods
+        function onReceiveComments(commentsObj) {
+
+            // render the story
+            renderStory(commentsObj[1].data.children[0]);
+
+            // wait a couple seconds and attach nav to panel
+            setTimeout(function(){
+
+                nav.querySelector('h1').textContent = 'Other Prompts';
+
+                moveNav();
+
+            },750);
+
+        }
+
+        function moveNav() {
+
+            nav.classList.remove('active');
+            panel.appendChild(nav);
+            nav.offsetLeft;
+            nav.classList.add('active');
+
+            toArray(document.querySelectorAll('.panel')).forEach(function(panel){
+
+                if (panel !== document.body.lastChild) {
+                    panel.parentNode.removeChild(panel);
+                }
+
+            });
+
+        }
+
+        function renderStory(story) {
+
+            var html = story.data.body.split('\n\n').map(function(part){
+                return '<p>' + part + '</p>';
+            }).join('');
+
+            // create new panel
+            panel = document.createElement('div');
+            panel.className = 'panel';
+            panel.innerHTML =
+                    '<article>' +
+                    '<h1>' + capitaliseFirstLetter(stripPrompt(active.data.title)) + '</h1>' +
+                    '<div>' + html + '</div>' +
+                    '<span class="author">Written by <a href="http://reddit.com/u/' + story.data.author +'">' + story.data.author + '</a></span>' +
+                    '</article>';
+            document.body.appendChild(panel);
+
+            // trigger animation
+            document.body.offsetLeft;
+            panel.classList.add('active');
+
+        }
+
+        // story list methods
+        function onReceiveStories(storiesObj) {
+            renderStories(storiesObj.data.children);
+        }
+
+        function getStoryById(id) {
+            var i= 0,l=data.length;
+            for(;i<l;i++) {
+                if (data[i].data.id === id) {
+                    return data[i];
+                }
+            }
+            return null;
+        }
+
+        function renderStories(items) {
+
+            // remember items
+            data = items;
+
+            // render items
+            list.innerHTML = items
+                .filter(function(item){
+                    return !item.data.stickied &&
+                            item.data.num_comments > 0 &&
+                            item.data.link_flair_text !== 'Constructive Criticism' &&
+                            item.data.link_flair_text !== 'Off Topic' &&
+                            item.data.link_flair_text !== 'Prompt Me';
+                })
+                .map(function(item) {
+
+                        var type = item.data.link_flair_text;
+                        var author = item.data.author.toLocaleLowerCase();
+                        var id = item.data.id;
+                        var url = item.data.url;
+                        var title = capitaliseFirstLetter(stripPrompt(item.data.title));
+
+                    return '<li><a href="index.html?id=' + id + '">' + title + '</a>' +
+                           '<span class="author">in ' + dirtyPluralise(type) + ' by <a href="http://reddit.com/u/' + author +'">' + author + '</a></span></li>';
+
+                }).join('');
+
+        }
+
+        // clean title
+        function stripPrompt(str) {
+            return str.replace(/[^a-zA-Z0-9"'.]*(\{|\[|\()(\bwp|rf|ff|eu|cw|pm|mp|ip|pi|cc|ot\b)(\}|\]|\))[^a-zA-Z0-9"']*/i,'');
+        }
+
+        function startLoading() {
+
+            document.querySelector('.loader').classList.add('load');
+            document.querySelector('.loader').offsetLeft;
+
+        }
+
+        function stopLoading() {
+
+            document.querySelector('.loader').classList.remove('load');
+
+        }
+
+        // quick xhr request
+        function request(url,cb) {
+
+            startLoading();
+            var now = new Date().getTime();
+
+            var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+
+                    var duration = new Date().getTime() - now;
+
+                    setTimeout(function(){
+
+                        cb(JSON.parse(xhr.responseText));
+
+                        stopLoading();
+
+                    },Math.max(0,500-duration));
+
+                }
+            };
+            xhr.open('GET',url,true);
+            xhr.send();
+
+        }
+
+        // nodelist to array
+        function toArray(nl) {
+            return Array.prototype.slice.call(nl);
+        }
+
+        function capitaliseFirstLetter(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        function dirtyPluralise(str) {
+            if (str.charAt(str.length-1)==='d') {
+                return str;
+            }
+            return str + 's';
+        }
+
+        // expose
+        return {
+            read:function(){
+                request(storiesURL,onReceiveStories);
+            }
+        }
+
+    }());
+
+    // start reading
+    Reader.read();
+
+</script>
+</html>
