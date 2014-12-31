@@ -112,6 +112,12 @@
             cursor:pointer;
         }
 
+        hr {
+            height:1px;
+            background:#D5D0CF;
+            border:none;
+        }
+
         div {
             color:#675D57;
         }
@@ -235,7 +241,7 @@
 
 </body>
 
-
+<script src="marked.min.js"></script>
 <script>
 
     // setup reader
@@ -262,21 +268,26 @@
             e.preventDefault();
             e.stopPropagation();
 
+            // create history
+            history.replaceState({},'', e.target.href);
+
             // get id from url
             var storyId = e.target.href.split('?id=')[1];
+
+            getStory(storyId);
+        });
+
+        // get story
+        function getStory(storyId) {
 
             // get story object
             active = getStoryById(storyId);
             if (!active){return;}
 
-            // create history
-            var current_url = window.location.href;
-            history.replaceState({},'', e.target.href);
-            history.replaceState({},'',current_url);
-
-            // get data
+            // show story
             request(postURL + storyId  + '/?limit=1&sort=hot',onReceiveComments);
-        });
+
+        }
 
         // story detail methods
         function onReceiveComments(commentsObj) {
@@ -314,17 +325,13 @@
 
         function renderStory(story) {
 
-            var html = story.data.body.split('\n\n').map(function(part){
-                return '<p>' + part + '</p>';
-            }).join('');
-
             // create new panel
             panel = document.createElement('div');
             panel.className = 'panel';
             panel.innerHTML =
                     '<article>' +
                     '<h1>' + capitaliseFirstLetter(stripPrompt(active.data.title)) + '</h1>' +
-                    '<div>' + html + '</div>' +
+                    '<div>' + marked(story.data.body.replace(/(\^)+/gi,'')) + '</div>' +
                     '<span class="author">Written by <a href="http://reddit.com/u/' + story.data.author +'">' + story.data.author + '</a></span>' +
                     '</article>';
             document.body.appendChild(panel);
@@ -442,7 +449,25 @@
         // expose
         return {
             read:function(){
-                request(storiesURL,onReceiveStories);
+
+                var id = null;
+
+                // determine if should show article
+                if (window.location.search.length) {
+                    id = location.search.split('=')[1];
+                }
+
+                // request all stories
+                request(storiesURL,function(data){
+
+                    onReceiveStories(data);
+
+                    if (id) {
+                        getStory(id);
+                    }
+
+                });
+
             }
         }
 
